@@ -2,6 +2,7 @@
 DISCORD_TOKEN =
 FB_TOKEN =
 TOXIC_DB_PATH = toxic.db
+TOXIC_TIMEOUT = 10
 HUNIEPOP_PATH = huniepop
 OHOHO_PATH = ohoho
 DICE_PATH = dice
