@@ -1,6 +1,7 @@
 from wand.image import Image
-import os, random, urllib, shutil
+import os, random, urllib, shutil, sqlite3, datetime
 import xml.etree.ElementTree as etree
+import asyncio
 
 DICE_DICT = {
 	1: 'dice1.png',
@@ -13,15 +14,32 @@ DICE_DICT = {
 
 SAFEBOORU_POST_URL = "https://safebooru.org/index.php?page=post&s=view&id="
 
-def trackCommand(message):
-	return # TODO: remove this
+COMMAND_TABLE_CREATE = "CREATE TABLE [commandusage] ([id] INTEGER NOT NULL PRIMARY KEY, [command] TEXT NOT NULL, [count] INTEGER NOT NULL, [discord_id] TEXT NOT NULL)"
+LAST_TABLE_CREATE = "CREATE TABLE [lastused] ([id] INTEGER NOT NULL PRIMARY KEY, [discord_id] TEXT NOT NULL, [lastused] INTEGER NOT NULL)"
+TOXIC_TABLE_CREATE = "CREATE TABLE [toxic] ([id] INTEGER NOT NULL PRIMARY KEY, [discord_id] TEXT NOT NULL, [toxic] INTEGER NOT NULL)"
+DB_TABLES = [COMMAND_TABLE_CREATE, LAST_TABLE_CREATE, TOXIC_TABLE_CREATE]
+
+def check_or_create_toxic_db(db_path, recreate=False):
+	# If wanting to start over, set recreate=True
+	if not os.path.exists(db_path) or recreate:
+		print("need to create db")
+		db_file = open(db_path, "wb")
+		db_file.close()
+		conn = sqlite3.connect(db_path)
+		for statement in DB_TABLES:
+			conn.execute(statement)
+		conn.commit()
+		conn.close()
+	return sqlite3.connect(db_path)
+
+def track_command(message, toxicconn, toxicdb):
 	commandUsed = None
 	command = message.content.split(' ')[0].strip()
 	if command == "!bestlovelive":
 		command = "!lovelive"
 	elif command == "!teachmemisslitchi":
 		command = "!blazblue"
-	if message.server != None and message.author != None:
+	if message.guild != None and message.author != None:
 		if message.author != None:
 			t = (message.author.id,command)
 			toxicdb.execute('SELECT * FROM commandusage WHERE discord_id=? and command=?', t)
@@ -83,3 +101,78 @@ def getsafeboorupic(tag, filename, blur=False):
 		img.save(filename=filename)
 
 	return posturl
+
+
+def check_last_used(message, toxicdb):
+	lastused = None
+	if ' ' in message.content and message.guild != None and message.author != None:
+		if message.author != None:
+			t = (message.author.id,)
+			toxicdb.execute('SELECT * FROM lastused WHERE discord_id=?', t)
+			lastused = toxicdb.fetchone()
+	return lastused
+
+def adjust_toxicity(message, lastused, toxicconn, toxicdb, toxic=True):
+	result = None
+	if ' ' in message.content and message.guild != None and message.author != None:
+		now_ts = int(datetime.datetime.now().timestamp())
+		target = message.content[message.content.find(' '):].strip()
+		server = message.guild
+		target_member = None
+		self_toxic = False
+
+		for m in server.members:
+			if m.display_name.lower().startswith(target.lower()) or m.name.lower().startswith(target.lower()):
+				target_member = m
+				break
+		if message.author != None and target_member != None:
+			if message.author.id == target_member.id and not toxic:
+				toxic = True
+				self_toxic = True
+			if lastused == None:
+				t = (None, message.author.id, now_ts)
+				toxicdb.execute('INSERT INTO lastused VALUES (?, ?, ?)', t)
+			else:
+				t = (now_ts, message.author.id)
+				toxicdb.execute('UPDATE lastused SET lastused=? where discord_id=?', t)
+			t = (target_member.id,)
+			toxicdb.execute('SELECT * FROM toxic WHERE discord_id=?', t)
+			toxicresult = toxicdb.fetchone()
+			name = target_member.nick
+			if name == None:
+				name = target_member.name
+			if toxicresult == None:
+				value = 1
+				if not toxic:
+					value = -1
+				t = (None, target_member.id, value)
+				toxicdb.execute('INSERT INTO toxic VALUES (?, ? , ?)', t)
+				result = (name, value, self_toxic)
+			else:
+				value = toxicresult[2]
+				if toxic:
+					value += 1
+				else:
+					value -= 1
+				t = (value, target_member.id)
+				toxicdb.execute('UPDATE toxic SET toxic=? where discord_id=?', t)
+				result = (name, value, self_toxic)
+
+	toxicconn.commit()
+	return result
+
+async def get_toxicity(message, toxicdb):
+	result = []
+	if message.guild != None:
+		toxicdb.execute('SELECT * FROM toxic')
+		toxicresult = toxicdb.fetchall()
+		for t in toxicresult:
+			member = await message.guild.fetch_member(t[1])
+			value = t[2]
+			if member == None:
+				continue
+			name = member.nick
+			if name == None:
+				name = member.name
+			result.append((name,value))
+	return sorted(result, key=lambda x: -x[1])

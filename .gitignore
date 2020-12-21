@@ -2,6 +2,7 @@ config.ini
 dicepic.png
 yuripic.jpg
 yaoipic.jpg
+toxic.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

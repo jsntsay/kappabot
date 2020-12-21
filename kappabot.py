@@ -1,8 +1,8 @@
 import configparser
 import discord
-import os, random, shutil
+import os, random, shutil, sqlite3, datetime
 import asyncio
-from kappabot_utils import trackCommand, makedicepic, getsafeboorupic
+from kappabot_utils import track_command, makedicepic, getsafeboorupic, check_or_create_toxic_db, check_last_used, adjust_toxicity, get_toxicity
 
 CONFIG_PATH = "config.ini"
 config = configparser.ConfigParser()
@@ -10,31 +10,41 @@ config.read(CONFIG_PATH)
 
 DISCORD_TOKEN = config["DEFAULT"]["DISCORD_TOKEN"]
 HUNIEPOP_PATH = config["DEFAULT"]["HUNIEPOP_PATH"]
+TOXIC_DB_PATH = config["DEFAULT"]["TOXIC_DB_PATH"]
 OHOHO_PATH = config["DEFAULT"]["OHOHO_PATH"]
 DICE_PATH = config["DEFAULT"]["DICE_PATH"]
 COINS_PATH = config["DEFAULT"]["COINS_PATH"]
 GAMES_PATH = config["DEFAULT"]["GAMES_PATH"]
 DEAD_PATH = config["DEFAULT"]["DEAD_PATH"]
+TOXIC_TIMEOUT = int(config["DEFAULT"]["TOXIC_TIMEOUT"])
+
+intents = discord.Intents.default()
+intents.members = True
+
+client = discord.Client(intents=intents)
+toxicconn = check_or_create_toxic_db(TOXIC_DB_PATH)
+toxicdb = toxicconn.cursor()
+
 
 HELP_MESSAGE = "!help - This help message.\n" + \
 	"!info - In case you were wondering what CMUken is about.\n" + \
-	"!huniepop - Who is Best Huniepop?\n" + \
-	"!diceroll or !dice [optional: dice to roll, up to 5, default is 3] - Clickity-clack.\n" + \
-	"!coinflip or !coin - 50/50 paulo's vision.\n" + \
-	"!yuri - Posts a random pic of 2 anime girls who are really into each other\n" + \
-	"!yaoi - Posts a random pic of 2 anime guys who are really into each other\n" + \
-	"!whatgame - Picks a game for you to play/practice\n" + \
 	"!baited - Baiiiiitttteeeeeed.\n" + \
-	"!gotem - #GOTEM\n" + \
-	"!mindgames - Mental guard crush.\n" + \
+	"!coinflip or !coin - 50/50 paulo's vision.\n" + \
 	"!dead or !rip - Destroyed.\n" + \
-	"!ohoho - Show them the divide in class.\n"
+	"!gotem - #GOTEM\n" + \
+	"!diceroll or !dice [optional: dice to roll, up to 5, default is 3] - Clickity-clack.\n" + \
+	"!huniepop - Who is Best Huniepop?\n" + \
+	"!ohoho - Show them the divide in class.\n" + \
+	"!mindgames - Mental guard crush.\n" + \
+	"!toxic or !goodguy/gal - Divy up toxic points.\n" + \
+	"!triggered - For times when you are triggered.\n" + \
+	"!whatgame - Picks a game for you to play/practice\n" + \
+	"!yuri - Posts a random pic of 2 anime girls who are really into each other\n" + \
+	"!yaoi - Posts a random pic of 2 anime guys who are really into each other\n"
+
 INFO_MESSAGE = "CMUken is part of the Pittsburgh fighting game community. More info on the Facebook group: https://www.facebook.com/groups/CMUken/"
 
-client = discord.Client()
-
 OHOHO_PICS = [f for f in os.listdir(OHOHO_PATH) if os.path.isfile(os.path.join(OHOHO_PATH, f))]
-
 DEAD_PICS = [f for f in os.listdir(DEAD_PATH) if os.path.isfile(os.path.join(DEAD_PATH, f))]
 
 game_list = []
@@ -89,8 +99,9 @@ def getEmoji(message, name):
 			return str(e)
 	return ""
 
-async def get_safebooru(message, tag, pic_path):
-	trackCommand(message)
+async def send_safebooru_message(message, tag, pic_path, track=True):
+	if track:
+		track_command(message, toxicconn, toxicdb)
 	tags = tag
 	if ' ' in message.content:
 		tags = tags + ' ' + message.content[message.content.find(' '):].strip()
@@ -125,7 +136,7 @@ async def on_message(message):
 		with open('zekamashi.jpg', 'rb') as pic:
 			await message.channel.send("None", file=discord.File(pic))
 	elif message.content.startswith('!huniepop'):
-		trackCommand(message)
+		track_command(message, toxicconn, toxicdb)
 		await message.channel.send("Who is the Huniepop waifu for " + message.author.mention + "?")
 		path = random.choice(list(HUNIEPOP_DICT.keys()))
 		with open(os.path.join(HUNIEPOP_PATH, path), 'rb') as pic:
@@ -139,9 +150,9 @@ async def on_message(message):
 		with open(picpath, 'rb') as pic:
 			await message.channel.send("_Ohoho~_", file=discord.File(pic))
 	elif message.content.startswith('!yuri'):
-		await get_safebooru(message, "yuri", "yuripic.jpg")
+		await send_safebooru_message(message, "yuri", "yuripic.jpg")
 	elif message.content.startswith('!yaoi'):
-		await get_safebooru(message, "yaoi", "yaoipic.jpg")
+		await send_safebooru_message(message, "yaoi", "yaoipic.jpg")
 	elif message.content.startswith('!diceroll') or message.content.startswith('!dice'):
 		numdice = 3
 		try:
@@ -178,22 +189,71 @@ async def on_message(message):
 		with open('baited.gif', 'rb') as pic:
 			await message.channel.send("Baiiiiitttteeeeeed.", file=discord.File(pic))
 	elif message.content.startswith('!gotem'):
-		trackCommand(message)
+		track_command(message, toxicconn, toxicdb)
 		with open('gotem.gif', 'rb') as pic:
 			await message.channel.send("Got em.", file=discord.File(pic))
 	elif message.content.startswith('ARMS'):
-		trackCommand(message)
+		track_command(message, toxicconn, toxicdb)
 		with open('ARMS.jpg', 'rb') as pic:
 			await message.channel.send("Woh-oh-oh-oh-oh-ohhhhhh~", file=discord.File(pic))
 	elif message.content.startswith('!mindgames'):
-		trackCommand(message)
+		track_command(message, toxicconn, toxicdb)
 		with open('mindgames.gif', 'rb') as pic:
 			await message.channel.send("Mind Games!", file=discord.File(pic))
 	elif message.content.startswith('!dead') or message.content.startswith('!rip'):
-		trackCommand(message)
+		track_command(message, toxicconn, toxicdb)
 		path = random.choice(DEAD_PICS)
 		with open(os.path.join(DEAD_PATH, path), 'rb') as pic:
 			await message.channel.send("Destroyed.", file=discord.File(pic))
+	elif message.content.startswith('!toxicity') or message.content.startswith('!toxicboard'):
+		# NOTE: due to how the message parsing is... this has to be above the !toxic command :kappa:
+		toxicity = await get_toxicity(message, toxicdb)
+		output = "Toxicity Rankings: "
+		for t in toxicity:
+			face = getToxic(message, toxic_emoji)
+			if t[1] <= 0:
+				face = getGoodguy(message, goodguy_emoji)
+			output += '\n\t{} {}\t-\t{}'.format(t[0], face, t[1])
+		if len(output) > 2000:
+			# split output into two, obviously not scalable if the list gets longer
+			s = output.split('\n')
+			splitIndex = int(len(s)/2 + 1)
+			output1 = s[:splitIndex]
+			output2 = s[splitIndex:]
+			await message.channel.send("\n".join(output1))
+			await message.channel.send("\n".join(output2))
+		else:
+			await message.channel.send(output)
+	elif message.content.startswith('!toxic') or message.content.startswith('!goodguy') or message.content.startswith('!goodgirl') or message.content.startswith('!goodgal'):
+			track_command(message, toxicconn, toxicdb)
+			lastused = check_last_used(message, toxicdb)
+			if lastused != None:
+				now_ts = int(datetime.datetime.now().timestamp())
+				time_elapsed = now_ts - lastused[2]
+				if time_elapsed < TOXIC_TIMEOUT:
+					kappa = getKappa(message, kappa_emoji)
+					await message.channel.send('{}, chill out for {} more seconds {}'.format(message.author.mention, TOXIC_TIMEOUT - time_elapsed, kappa))
+					return
+			result = None
+			if message.content.startswith('!toxic'):
+				result = adjust_toxicity(message, lastused, toxicconn, toxicdb)
+			elif message.content.startswith('!goodguy') or message.content.startswith('!goodgirl') or message.content.startswith('!goodgal'):
+				result = adjust_toxicity(message, lastused, toxicconn, toxicdb, toxic=False)
+			if result != None:
+				face = getToxic(message, toxic_emoji)
+				if result[1] <= 0:
+					face = getGoodguy(message, goodguy_emoji)
+				if result[2]:
+					# caught em trying to give themselves goodguy points kappa
+					kappa = getKappa(message, kappa_emoji)
+					await message.channel.send('{} {}\t-\t{} {}'.format(result[0], face, result[1], kappa))
+				else:
+					await message.channel.send('{} {}\t-\t{}'.format(result[0], face, result[1]))
+	elif message.content.startswith('!triggered'):
+		track_command(message, toxicconn, toxicdb)
+		await message.channel.send("Triggered? Let me help you with that.")
+		await message.channel.send( "!yuri")
+		await send_safebooru_message(message, "yuri", "yuripic.jpg", track=False)
 try:
 	client.run(DISCORD_TOKEN)
 except Exception:
