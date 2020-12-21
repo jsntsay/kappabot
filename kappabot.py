@@ -183,7 +183,7 @@ async def on_message(message):
 			await message.channel.send("Got em.", file=discord.File(pic))
 	elif message.content.startswith('ARMS'):
 		trackCommand(message)
-		with open('arms.jpg', 'rb') as pic:
+		with open('ARMS.jpg', 'rb') as pic:
 			await message.channel.send("Woh-oh-oh-oh-oh-ohhhhhh~", file=discord.File(pic))
 	elif message.content.startswith('!mindgames'):
 		trackCommand(message)

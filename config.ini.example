@@ -7,3 +7,4 @@ OHOHO_PATH = ohoho
 DICE_PATH = dice
 COINS_PATH = coins
 GAMES_PATH = gamelist.txt
+DEAD_PATH = dead
