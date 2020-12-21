@@ -14,6 +14,7 @@ OHOHO_PATH = config["DEFAULT"]["OHOHO_PATH"]
 DICE_PATH = config["DEFAULT"]["DICE_PATH"]
 COINS_PATH = config["DEFAULT"]["COINS_PATH"]
 GAMES_PATH = config["DEFAULT"]["GAMES_PATH"]
+DEAD_PATH = config["DEFAULT"]["DEAD_PATH"]
 
 HELP_MESSAGE = "!help - This help message.\n" + \
 	"!info - In case you were wondering what CMUken is about.\n" + \
@@ -25,12 +26,16 @@ HELP_MESSAGE = "!help - This help message.\n" + \
 	"!whatgame - Picks a game for you to play/practice\n" + \
 	"!baited - Baiiiiitttteeeeeed.\n" + \
 	"!gotem - #GOTEM\n" + \
+	"!mindgames - Mental guard crush.\n" + \
+	"!dead or !rip - Destroyed.\n" + \
 	"!ohoho - Show them the divide in class.\n"
 INFO_MESSAGE = "CMUken is part of the Pittsburgh fighting game community. More info on the Facebook group: https://www.facebook.com/groups/CMUken/"
 
 client = discord.Client()
 
 OHOHO_PICS = [f for f in os.listdir(OHOHO_PATH) if os.path.isfile(os.path.join(OHOHO_PATH, f))]
+
+DEAD_PICS = [f for f in os.listdir(DEAD_PATH) if os.path.isfile(os.path.join(DEAD_PATH, f))]
 
 game_list = []
 with open(GAMES_PATH) as f:
@@ -176,6 +181,19 @@ async def on_message(message):
 		trackCommand(message)
 		with open('gotem.gif', 'rb') as pic:
 			await message.channel.send("Got em.", file=discord.File(pic))
+	elif message.content.startswith('ARMS'):
+		trackCommand(message)
+		with open('arms.jpg', 'rb') as pic:
+			await message.channel.send("Woh-oh-oh-oh-oh-ohhhhhh~", file=discord.File(pic))
+	elif message.content.startswith('!mindgames'):
+		trackCommand(message)
+		with open('mindgames.gif', 'rb') as pic:
+			await message.channel.send("Mind Games!", file=discord.File(pic))
+	elif message.content.startswith('!dead') or message.content.startswith('!rip'):
+		trackCommand(message)
+		path = random.choice(DEAD_PICS)
+		with open(os.path.join(DEAD_PATH, path), 'rb') as pic:
+			await message.channel.send("Destroyed.", file=discord.File(pic))
 try:
 	client.run(DISCORD_TOKEN)
 except Exception:

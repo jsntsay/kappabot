@@ -1,5 +1,9 @@
 [DEFAULT]
 DISCORD_TOKEN =
 FB_TOKEN =
-TOXIC_DB_PATH =
-HUNIEPOP_PATH =
+TOXIC_DB_PATH = toxic.db
+HUNIEPOP_PATH = huniepop
+OHOHO_PATH = ohoho
+DICE_PATH = dice
+COINS_PATH = coins
+GAMES_PATH = gamelist.txt
