@@ -97,7 +97,7 @@ def getsafeboorupic(tag, filename, blur=False):
 			width = 300
 		if blur:
 			img.resize(int(width/2), int(height/2), filter='box', blur=4)
-		img.resize(width, height)
+		img.sample(width, height)
 		img.save(filename=filename)
 
 	return posturl
