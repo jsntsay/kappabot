@@ -1,21 +1,21 @@
 import configparser
 import discord
-import os, random, shutil, sqlite3, datetime
+import os, random, shutil, sqlite3, datetime, sys
 import asyncio
 from kappabot_utils import track_command, makedicepic, getsafeboorupic, check_or_create_toxic_db, check_last_used, adjust_toxicity, get_toxicity
 
-CONFIG_PATH = "config.ini"
+CONFIG_PATH = os.path.join(sys.path[0], "config.ini")
 config = configparser.ConfigParser()
 config.read(CONFIG_PATH)
 
 DISCORD_TOKEN = config["DEFAULT"]["DISCORD_TOKEN"]
-HUNIEPOP_PATH = config["DEFAULT"]["HUNIEPOP_PATH"]
-TOXIC_DB_PATH = config["DEFAULT"]["TOXIC_DB_PATH"]
-OHOHO_PATH = config["DEFAULT"]["OHOHO_PATH"]
-DICE_PATH = config["DEFAULT"]["DICE_PATH"]
-COINS_PATH = config["DEFAULT"]["COINS_PATH"]
-GAMES_PATH = config["DEFAULT"]["GAMES_PATH"]
-DEAD_PATH = config["DEFAULT"]["DEAD_PATH"]
+HUNIEPOP_PATH = os.path.join(sys.path[0], config["DEFAULT"]["HUNIEPOP_PATH"])
+TOXIC_DB_PATH = os.path.join(sys.path[0], config["DEFAULT"]["TOXIC_DB_PATH"])
+OHOHO_PATH = os.path.join(sys.path[0], config["DEFAULT"]["OHOHO_PATH"])
+DICE_PATH = os.path.join(sys.path[0], config["DEFAULT"]["DICE_PATH"])
+COINS_PATH = os.path.join(sys.path[0], config["DEFAULT"]["COINS_PATH"])
+GAMES_PATH = os.path.join(sys.path[0], config["DEFAULT"]["GAMES_PATH"])
+DEAD_PATH = os.path.join(sys.path[0], config["DEFAULT"]["DEAD_PATH"])
 TOXIC_TIMEOUT = int(config["DEFAULT"]["TOXIC_TIMEOUT"])
 
 intents = discord.Intents.default()
