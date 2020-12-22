@@ -100,17 +100,18 @@ def getEmoji(message, name):
 	return ""
 
 async def send_safebooru_message(message, tag, pic_path, track=True):
+	local_path = os.path.join(sys.path[0], pic_path)
 	if track:
 		track_command(message, toxicconn, toxicdb)
 	tags = tag
 	if ' ' in message.content:
 		tags = tags + ' ' + message.content[message.content.find(' '):].strip()
-	posturl = getsafeboorupic(tags, pic_path)
+	posturl = getsafeboorupic(tags, local_path)
 	if posturl == None:
 		kappa = getKappa(message, kappa_emoji)
 		await message.channel.send("Sorry, no images found " + kappa)
 	else:
-		with open(pic_path, 'rb') as pic:
+		with open(local_path, 'rb') as pic:
 			await message.channel.send("<" + posturl + ">", file=discord.File(pic))
 
 @client.event
@@ -170,7 +171,7 @@ async def on_message(message):
 			values.append(random.randint(1,6))
 		total = makedicepic(DICE_PATH, values)
 		dice = random.randint(1,6)
-		with open('dicepic.png', 'rb') as pic:
+		with open(os.path.join(sys.path[0], 'dicepic.png'), 'rb') as pic:
 			await message.channel.send("Total: " + str(total), file=discord.File(pic))
 	elif message.content.startswith('!coinflip') or message.content.startswith('!coin'):
 		if random.random() < 0.50:
@@ -186,19 +187,19 @@ async def on_message(message):
 			game = game.replace(':kappa:', kappa)
 		await message.channel.send(game)
 	elif message.content.startswith('!baited'):
-		with open('baited.gif', 'rb') as pic:
+		with open(os.path.join(sys.path[0], 'baited.gif'), 'rb') as pic:
 			await message.channel.send("Baiiiiitttteeeeeed.", file=discord.File(pic))
 	elif message.content.startswith('!gotem'):
 		track_command(message, toxicconn, toxicdb)
-		with open('gotem.gif', 'rb') as pic:
+		with open(os.path.join(sys.path[0], 'gotem.gif'), 'rb') as pic:
 			await message.channel.send("Got em.", file=discord.File(pic))
 	elif message.content.startswith('ARMS'):
 		track_command(message, toxicconn, toxicdb)
-		with open('ARMS.jpg', 'rb') as pic:
+		with open(os.path.join(sys.path[0], 'ARMS.jpg'), 'rb') as pic:
 			await message.channel.send("Woh-oh-oh-oh-oh-ohhhhhh~", file=discord.File(pic))
 	elif message.content.startswith('!mindgames'):
 		track_command(message, toxicconn, toxicdb)
-		with open('mindgames.gif', 'rb') as pic:
+		with open(os.path.join(sys.path[0], 'mindgames.gif'), 'rb') as pic:
 			await message.channel.send("Mind Games!", file=discord.File(pic))
 	elif message.content.startswith('!dead') or message.content.startswith('!rip'):
 		track_command(message, toxicconn, toxicdb)

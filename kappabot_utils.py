@@ -1,5 +1,5 @@
 from wand.image import Image
-import os, random, urllib, shutil, sqlite3, datetime
+import os, random, urllib, shutil, sqlite3, datetime, sys
 import xml.etree.ElementTree as etree
 import asyncio
 
@@ -62,7 +62,7 @@ def makedicepic(dice_path, values):
 				img.composite(i, left=index*100, top=0)
 			index += 1
 			total += die
-		img.save(filename="dicepic.png")
+		img.save(filename=os.path.join(sys.path[0], "dicepic.png"))
 	return total
 
 def getsafeboorupic(tag, filename, blur=False):
@@ -70,7 +70,7 @@ def getsafeboorupic(tag, filename, blur=False):
 	if not blur and tag == 'yuri':
 		# With some probabilty, put up a pic of yuri from kof because you can.
 		if random.random() < 0.10:
-			shutil.copyfile('yuri.jpg', 'yuripic.jpg')
+			shutil.copyfile(os.path.join(sys.path[0], 'yuri.jpg'), os.path.join(sys.path[0], 'yuripic.jpg'))
 			return 'http://safebooru.org/index.php?page=post&s=view&id=1782381'
 	encoded_tags = urllib.parse.urlencode({
 		"tags": tag
