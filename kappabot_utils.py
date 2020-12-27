@@ -112,9 +112,9 @@ def check_last_used(message, toxicdb):
 			lastused = toxicdb.fetchone()
 	return lastused
 
-def adjust_toxicity(message, lastused, toxicconn, toxicdb, toxic=True):
+def adjust_toxicity(message, lastused, toxicconn, toxicdb, toxic_adj_value):
 	result = None
-	if ' ' in message.content and message.guild != None and message.author != None:
+	if ' ' in message.content and message.guild != None and message.author != None and toxic_adj_value != 0:
 		now_ts = int(datetime.datetime.now().timestamp())
 		target = message.content[message.content.find(' '):].strip()
 		server = message.guild
@@ -126,8 +126,7 @@ def adjust_toxicity(message, lastused, toxicconn, toxicdb, toxic=True):
 				target_member = m
 				break
 		if message.author != None and target_member != None:
-			if message.author.id == target_member.id and not toxic:
-				toxic = True
+			if message.author.id == target_member.id and toxic_adj_value < 0:
 				self_toxic = True
 			if lastused == None:
 				t = (None, message.author.id, now_ts)
@@ -142,18 +141,12 @@ def adjust_toxicity(message, lastused, toxicconn, toxicdb, toxic=True):
 			if name == None:
 				name = target_member.name
 			if toxicresult == None:
-				value = 1
-				if not toxic:
-					value = -1
-				t = (None, target_member.id, value)
+				t = (None, target_member.id, toxic_adj_value)
 				toxicdb.execute('INSERT INTO toxic VALUES (?, ? , ?)', t)
 				result = (name, value, self_toxic)
 			else:
 				value = toxicresult[2]
-				if toxic:
-					value += 1
-				else:
-					value -= 1
+				value += toxic_adj_value
 				t = (value, target_member.id)
 				toxicdb.execute('UPDATE toxic SET toxic=? where discord_id=?', t)
 				result = (name, value, self_toxic)

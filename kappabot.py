@@ -225,7 +225,7 @@ async def on_message(message):
 			await message.channel.send("\n".join(output2))
 		else:
 			await message.channel.send(output)
-	elif message.content.startswith('!toxic') or message.content.startswith('!goodguy') or message.content.startswith('!goodgirl') or message.content.startswith('!goodgal'):
+	elif message.content.startswith('!toxic') or message.content.startswith('!goodguy') or message.content.startswith('!goodgirl') or message.content.startswith('!goodgal') or message.content.startswith('!roulette'):
 			track_command(message, toxicconn, toxicdb)
 			lastused = check_last_used(message, toxicdb)
 			if lastused != None:
@@ -237,9 +237,17 @@ async def on_message(message):
 					return
 			result = None
 			if message.content.startswith('!toxic'):
-				result = adjust_toxicity(message, lastused, toxicconn, toxicdb)
+				result = adjust_toxicity(message, lastused, toxicconn, toxicdb, 1)
 			elif message.content.startswith('!goodguy') or message.content.startswith('!goodgirl') or message.content.startswith('!goodgal'):
-				result = adjust_toxicity(message, lastused, toxicconn, toxicdb, toxic=False)
+				result = adjust_toxicity(message, lastused, toxicconn, toxicdb, -1)
+			elif message.content.startswith('!roulette'):
+				rval = random.randint(-2, 2)
+				# messing with the twins
+				if (message.author.id == 118207276086591497 or message.author.id == 177883979385536513) and rval < -1:
+					rval = 0
+				result = adjust_toxicity(message, lastused, toxicconn, toxicdb, rval)
+				# potential issue here if slowmode is enabled and the bot has to respect it
+				await message.channel.send('{} rolled {} {} points!'.format(message.author.mention, abs(rval), 'toxic' if rval >= 0 else 'goodguy'))
 			if result != None:
 				face = getToxic(message, toxic_emoji)
 				if result[1] <= 0:
