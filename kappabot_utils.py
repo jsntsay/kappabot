@@ -166,7 +166,7 @@ def adjust_toxicity(message, lastused, toxicconn, toxicdb, toxic_adj_value):
 			if toxicresult == None:
 				t = (None, target_member.id, toxic_adj_value)
 				toxicdb.execute('INSERT INTO toxic VALUES (?, ? , ?)', t)
-				result = (name, value, self_toxic)
+				result = (name, toxic_adj_value, self_toxic)
 			else:
 				value = toxicresult[2]
 				value += toxic_adj_value
