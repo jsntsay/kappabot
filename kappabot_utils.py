@@ -87,6 +87,7 @@ async def getsafeboorupic(tag, filename, blur=False):
 		if random.random() < 0.10:
 			shutil.copyfile(os.path.join(sys.path[0], 'yuri.jpg'), os.path.join(sys.path[0], 'yuripic.jpg'))
 			return 'http://safebooru.org/index.php?page=post&s=view&id=1782381'
+	tag += " -animated"
 	encoded_tags = urllib.parse.urlencode({
 		"tags": tag
 	})
