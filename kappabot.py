@@ -3,6 +3,7 @@ import discord
 import os, random, shutil, sqlite3, datetime, sys
 import asyncio
 from kappabot_utils import track_command, makedicepic, getsafeboorupic, check_or_create_toxic_db, check_last_used, adjust_toxicity, get_toxicity
+import logging
 
 CONFIG_PATH = os.path.join(sys.path[0], "config.ini")
 config = configparser.ConfigParser()
@@ -18,6 +19,10 @@ GAMES_PATH = os.path.join(sys.path[0], config["DEFAULT"]["GAMES_PATH"])
 DEAD_PATH = os.path.join(sys.path[0], config["DEFAULT"]["DEAD_PATH"])
 TOXIC_TIMEOUT = int(config["DEFAULT"]["TOXIC_TIMEOUT"])
 REVIVE_EXEC = config["DEFAULT"]["REVIVE_EXEC"]
+LOGGING_PATH = config["DEFAULT"]["LOGGING_PATH"]
+
+logging.basicConfig(filename=LOGGING_PATH, level=logging.INFO, format='%(asctime)s %(name)s %(levelname)s:%(message)s')
+logger = logging.getLogger(__name__)
 
 intents = discord.Intents.default()
 intents.members = True
@@ -107,10 +112,13 @@ async def send_safebooru_message(message, tag, pic_path, track=True):
 	tags = tag
 	if ' ' in message.content:
 		tags = tags + ' ' + message.content[message.content.find(' '):].strip()
-	posturl = getsafeboorupic(tags, local_path)
+	posturl = await getsafeboorupic(tags, local_path)
 	if posturl == None:
 		kappa = getKappa(message, kappa_emoji)
 		await message.channel.send("Sorry, no images found " + kappa)
+	elif posturl == "error":
+		kappa = getKappa(message, kappa_emoji)
+		await message.channel.send("Sorry, error in search, please try again later " + kappa)
 	else:
 		with open(local_path, 'rb') as pic:
 			await message.channel.send("<" + posturl + ">", file=discord.File(pic))
@@ -120,7 +128,8 @@ async def on_ready():
 	print('Logged in as')
 	print(client.user.name)
 	print(client.user.id)
-	print('------')\
+	print('------')
+	logger.info('Logged in as: {}-{}'.format(client.user.name, client.user.id))
 
 @client.event
 async def on_message(message):
@@ -264,9 +273,12 @@ async def on_message(message):
 		await message.channel.send("Triggered? Let me help you with that.")
 		await message.channel.send( "!yuri")
 		await send_safebooru_message(message, "yuri", "yuripic.jpg", track=False)
+
 try:
 	client.run(DISCORD_TOKEN)
-except Exception:
-	os.execv(sys.executable, [REVIVE_EXEC] + sys.argv)
-except Error:
-	os.execv(sys.executable, [REVIVE_EXEC] + sys.argv)
+except Exception as ex:
+	logger.error(ex)
+	#os.execv(sys.executable, [REVIVE_EXEC] + sys.argv)
+except Error as ex:
+	logger.error(ex)
+	#os.execv(sys.executable, [REVIVE_EXEC] + sys.argv)
