@@ -17,6 +17,7 @@ COINS_PATH = os.path.join(sys.path[0], config["DEFAULT"]["COINS_PATH"])
 GAMES_PATH = os.path.join(sys.path[0], config["DEFAULT"]["GAMES_PATH"])
 DEAD_PATH = os.path.join(sys.path[0], config["DEFAULT"]["DEAD_PATH"])
 TOXIC_TIMEOUT = int(config["DEFAULT"]["TOXIC_TIMEOUT"])
+REVIVE_EXEC = config["DEFAULT"]["REVIVE_EXEC"]
 
 intents = discord.Intents.default()
 intents.members = True
@@ -266,6 +267,6 @@ async def on_message(message):
 try:
 	client.run(DISCORD_TOKEN)
 except Exception:
-	os.execv(sys.executable, ['python'] + sys.argv)
+	os.execv(sys.executable, [REVIVE_EXEC] + sys.argv)
 except Error:
-	os.execv(sys.executable, ['python'] + sys.argv)
+	os.execv(sys.executable, [REVIVE_EXEC] + sys.argv)
