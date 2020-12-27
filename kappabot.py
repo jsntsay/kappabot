@@ -243,7 +243,7 @@ async def on_message(message):
 			elif message.content.startswith('!roulette'):
 				rval = random.randint(-2, 2)
 				# messing with the twins
-				if (message.author.id == 118207276086591497 or message.author.id == 177883979385536513) and rval < -1:
+				if (message.author.id == 118207276086591497 or message.author.id == 177883979385536513) and rval <= -1:
 					rval = 0
 				result = adjust_toxicity(message, lastused, toxicconn, toxicdb, rval)
 				# potential issue here if slowmode is enabled and the bot has to respect it

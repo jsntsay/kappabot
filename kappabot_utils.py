@@ -105,7 +105,7 @@ def getsafeboorupic(tag, filename, blur=False):
 
 def check_last_used(message, toxicdb):
 	lastused = None
-	if ' ' in message.content and message.guild != None and message.author != None:
+	if (' ' in message.content or message.content.startswith('!roulette')) and message.guild != None and message.author != None:
 		if message.author != None:
 			t = (message.author.id,)
 			toxicdb.execute('SELECT * FROM lastused WHERE discord_id=?', t)
@@ -114,7 +114,7 @@ def check_last_used(message, toxicdb):
 
 def adjust_toxicity(message, lastused, toxicconn, toxicdb, toxic_adj_value):
 	result = None
-	if ' ' in message.content and message.guild != None and message.author != None and toxic_adj_value != 0:
+	if (' ' in message.content or message.content.startswith('!roulette')) and message.guild != None and message.author != None:
 		now_ts = int(datetime.datetime.now().timestamp())
 		target = message.content[message.content.find(' '):].strip()
 		server = message.guild
@@ -125,9 +125,13 @@ def adjust_toxicity(message, lastused, toxicconn, toxicdb, toxic_adj_value):
 			if m.display_name.lower().startswith(target.lower()) or m.name.lower().startswith(target.lower()):
 				target_member = m
 				break
+		# special case of the !roulette command, only works on yourself so ignore the target if exists
+		if message.content.startswith("!roulette"):
+			target_member = message.author
 		if message.author != None and target_member != None:
-			if message.author.id == target_member.id and toxic_adj_value < 0:
+			if message.author.id == target_member.id and toxic_adj_value < 0 and not message.content.startswith("!roulette"):
 				self_toxic = True
+
 			if lastused == None:
 				t = (None, message.author.id, now_ts)
 				toxicdb.execute('INSERT INTO lastused VALUES (?, ?, ?)', t)
